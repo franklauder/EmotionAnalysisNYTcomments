@@ -16,7 +16,12 @@ import seaborn as sns
 
 ```
 
+```{python}
 
+import re
+
+
+```
 
 
 
@@ -50,6 +55,21 @@ from nltk.corpus import stopwords
 
 ```
 
+```{python}
+
+from nltk.corpus import wordnet
+
+
+```
+
+```{python}
+
+
+from nltk.stem import WordNetLemmatizer
+
+
+```
+
 
 
 ```{python}
@@ -70,12 +90,41 @@ from nltk import word_tokenize
 
 ```
 
+```{python}
+
+from nltk import pos_tag
+
+
+```
+
+```{python}
+
+import emoji
+
+
+
+```
+
+```{python}
+
+import contractions
+
+
+```
 
 
 ```{python}
 
 
 from nltk.downloader import download
+
+
+```
+
+```{python}
+
+
+import nltk.downloader
 
 
 ```
@@ -96,16 +145,374 @@ nltk.download('punkt')
 ```
 
 
+
+
+
+
+
+
+
 ```{python}
+
+text_string=str(text)
+
+
+```
+
+
+```{python}
+
 
 text=nyt_comments1718["commentBody"]
 
 
 ```
 
+Check if text data has any missing values (NAs)
+
 ```{python}
 
-type(text)
+
+
+print(text.isna().sum())
+
+
+```
+
+
+
+
+```{python}
+
+
+text_nona=text.fillna("")
+
+
+```
+
+
+```{python}
+
+
+print(text_nona.isna().sum())
+
+
+```
+
+Check if the text contains emojis
+```{python}
+
+emoji.emoji_count(text)
+
+```
+
+No emojis detected.
+
+
+Check if hastags are in the text
+
+```{python}
+
+text_string=str(text)
+
+
+```
+
+```{python}
+
+if re.search(r'#\w+', text_string):
+    print("text contains hashtags.")
+else:
+    print("text does not contain hashtags.")
+
+
+
+
+```
+
+No hashtags detetected. 
+
+Check if there are emojis in text
+
+```{python}
+
+
+def demojize_text(text: str) -> str:
+    # Convert emojis to "smiling_face_with_heart_eyes" style tokens
+    return emoji.demojize(text, delimiters=(" ", " "))
+
+
+```
+
+```{python}
+
+
+print(f"Text has an emoji: {has_emoji(text_nona)}")
+
+
+```
+
+Since emojis have been detected we'll need a function to change emojis. 
+
+
+This function will convert emojis to their word meanings, i.e. converting an emoji  to "smiling_face_with_heart_eyes" style tokens
+
+```{python}
+
+
+def demojize_text(text: str) -> str:
+    
+    return emoji.demojize(text, delimiters=(" ", " "))
+
+
+```
+
+
+
+```{python}
+
+
+
+
+
+```
+
+Function for expanding contractions , i.e. "can't" to "can not"
+
+```{python}
+
+
+def expand_contractions(text: str) -> str:
+    return contractions.fix(text)
+
+
+
+```
+
+
+Function for reducing 3+ repeated characters to 2 for vowels and consonants
+```{python}
+
+def normalize_elongations(text: str) -> str:
+    # Reduce 3+ repeated chars to 2 for vowels/consonants: coooool -> coool
+    return re.sub(r'(.)\1{2,}', r'\1\1', text)
+
+
+```
+
+
+function for limiting "!!!!!" tomat most "!!!" and "?????" to at most "???"
+
+```{python}
+def cap_punct_runs(text: str) -> str:
+    # Limit "!!!!!" to at most "!!!" and "????" to "???"
+    text = re.sub(r'!{3,}', '!!!', text)
+    text = re.sub(r'\?{3,}', '???', text)
+    return text
+
+```
+
+
+Function converts small integers to words. 
+
+```{python}
+
+
+def number_to_words_if_helpful(token: str, enable=True):
+    # Convert small integers to words (helps lexicons)
+    if not enable:
+        return token
+    if token.isdigit():
+        try:
+            n = int(token)
+            if -20 <= n <= 20:  # small window is usually enough
+                # Lightweight mapping to avoid external deps
+                small = {
+                    0:"zero",1:"one",2:"two",3:"three",4:"four",5:"five",6:"six",
+                    7:"seven",8:"eight",9:"nine",10:"ten",11:"eleven",12:"twelve",
+                    13:"thirteen",14:"fourteen",15:"fifteen",16:"sixteen",
+                    17:"seventeen",18:"eighteen",19:"nineteen",20:"twenty",
+                    -1:"minus one",-2:"minus two",-3:"minus three"
+                }
+                return small.get(n, token)
+        except:
+            pass
+    return token
+
+
+```
+
+
+Maps POS tags to wordnet POS for lemmatiztion
+
+```{python}
+
+
+def get_wordnet_pos(treebank_tag):
+    # map POS tags to wordnet POS for lemmatization
+    if treebank_tag.startswith('J'):
+        return wordnet.ADJ
+    elif treebank_tag.startswith('V'):
+        return wordnet.VERB
+    elif treebank_tag.startswith('N'):
+        return wordnet.NOUN
+    elif treebank_tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
+
+
+```
+
+
+Function that builds emotion-aware stoplist
+
+```{python}
+
+# Build emotion-aware stoplist
+def emotion_stopwords():
+    sw = set(stopwords.words('english'))
+    keep = {"no","not","nor","never","none","nobody","nothing","nowhere",
+            "very","really","too","so","quite","extremely","hardly","barely","scarcely"}
+    return sw - keep
+
+
+```
+
+
+ Simple negation: add _NEG suffix until punctuation boundary
+
+```{python}
+
+
+def negation_scope(tokens):
+    # Simple negation: add _NEG suffix until punctuation boundary
+    negators = {"no","not","never","n't"}
+    punct_boundary = {".","!","?",";",":"}
+    out = []
+    negate = False
+    for tok in tokens:
+        lower = tok.lower()
+        if lower in negators:
+            out.append(lower)  # keep the negator itself
+            negate = True
+            continue
+        if tok in punct_boundary:
+            out.append(tok)
+            negate = False
+            continue
+        out.append(f"{tok}_NEG" if negate else tok)
+    return out
+
+
+
+```
+
+```{python}
+
+
+lemmatizer = WordNetLemmatizer()
+STOP_EMO = emotion_stopwords()
+
+
+```
+
+
+
+
+```{python}
+
+
+
+
+def preprocess_for_emotions(text: str,
+                            convert_small_ints_to_words: bool = True) -> dict:
+    # 1) sanitize
+    if text is None:
+        text = ""
+    text = str(text)
+    text = text.replace("\r", " ").strip()
+    text = re.sub(r"\s+", " ", text)
+
+    # 2) emoji/emoticon → text
+    text = demojize_text(text)
+
+    # 3) contractions
+    text = expand_contractions(text)
+
+    # 4) lowercase
+    text = text.lower()
+
+    # 5) urls/mentions/hashtags
+    #text = replace_specials(text)
+    #text = tokenize_hashtags(text)
+
+    # 6) elongations & punct runs
+    text = normalize_elongations(text)
+    text = cap_punct_runs(text)
+
+    # 7) tokenize
+    tokens = word_tokenize(text)
+
+    # 7b) (optional) convert small integers to words
+    if convert_small_ints_to_words:
+        tokens = [number_to_words_if_helpful(t, enable=True) for t in tokens]
+
+    # 8) pos tag & lemmatize
+    tagged = pos_tag(tokens)
+    lemmas = [lemmatizer.lemmatize(w, get_wordnet_pos(t)) for w, t in tagged]
+
+    # 9) stopword filtering (emotion-aware)
+    keep_punct = {"!", "?", "...", "!!!", "???"}
+    filtered = [w for w in lemmas if (w in keep_punct) or (w.isalpha() and w not in STOP_EMO) or (w.endswith("_neg"))]
+
+    # 10) negation scope
+    final_tokens = negation_scope(filtered)
+
+    # 11) final cleaned string (if needed)
+    cleaned_text = " ".join(final_tokens)
+
+    return {
+        "tokens": final_tokens,
+        "cleaned_text": cleaned_text
+    }
+
+
+
+```
+
+
+```{python}
+
+df['prep'] = nyt_comments1718["commentBody"].fillna("").apply(lambda x: preprocess_for_emotions(x))
+
+
+
+```
+
+
+
+
+```{python}
+
+
+#df['tokens'] = df['prep'].apply(lambda d: d['tokens'])
+# df['cleaned'] = df['prep'].apply(lambda d: d['cleaned_text'])
+
+
+
+```
+
+
+
+
+
+
+
+
+```{python}
+
+tokens=word_tokenize(text_string)
 
 ```
 
@@ -121,7 +528,7 @@ text=text.astype(str)
 
 
 
-tokens_list=[word_tokenize(text) for text in nyt_comments1718["commentBody"]]
+tokens_list=[word_tokenize(text) for text in text_list]
 
 
 ```
