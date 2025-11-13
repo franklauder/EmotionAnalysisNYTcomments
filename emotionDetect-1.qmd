@@ -13,16 +13,43 @@ format: html
 import pandas as pd
 import matplotlib as plt
 import seaborn as sns
+import re
+
+```
+
+
+
+```{python}
+
+import nltk
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer
+from nltk import word_tokenize, pos_tag
+import emoji
+import contractions
+from nltk.downloader import download
+import nltk.downloader
+
+
+
+
+
 
 ```
 
 ```{python}
 
-import re
 
+nltk.download('punkt_tab')
 
 ```
 
+```{python}
+
+nltk.download('punkt')
+
+
+```
 
 
 ```{python}
@@ -43,113 +70,16 @@ print(nyt_comments1718.head())
 
 ```
 
-The commentBody column is the text we will extract emotion sentiment from.
-
-
-# Text pre-processing
-
 ```{python}
-
-
-from nltk.corpus import stopwords
-
-```
-
-```{python}
-
-from nltk.corpus import wordnet
+print(nyt_comments1718.tail())
 
 
 ```
 
-```{python}
+The commentBody column is the text that emotion sentiment  will be extracted from.
 
 
-from nltk.stem import WordNetLemmatizer
-
-
-```
-
-
-
-```{python}
-
-stop_words=stopwords.words('english')
-print(stop_words[:10])
-
-```
-
-
-
-```{python}
-
-
-
-from nltk import word_tokenize
-
-
-```
-
-```{python}
-
-from nltk import pos_tag
-
-
-```
-
-```{python}
-
-import emoji
-
-
-
-```
-
-```{python}
-
-import contractions
-
-
-```
-
-
-```{python}
-
-
-from nltk.downloader import download
-
-
-```
-
-```{python}
-
-
-import nltk.downloader
-
-
-```
-
-
-```{python}
-import nltk
-
-nltk.download('punkt_tab')
-
-
-```
-
-```{python}
-
-nltk.download('punkt')
-
-```
-
-
-
-
-
-
-
+<br>
 
 
 ```{python}
@@ -179,13 +109,15 @@ print(text.isna().sum())
 
 ```
 
+One missing value is detected.  This will be resolved in data pre-processing. 
+
 
 
 
 ```{python}
 
 
-text_nona=text.fillna("")
+#text_nona=text.fillna("")
 
 
 ```
@@ -194,22 +126,23 @@ text_nona=text.fillna("")
 ```{python}
 
 
-print(text_nona.isna().sum())
+#print(text_nona.isna().sum())
 
 
 ```
 
-Check if the text contains emojis
+Next, we'll Check if the text contains emojis
+
 ```{python}
 
 emoji.emoji_count(text)
 
 ```
 
-No emojis detected.
+Two emojis appear in the text.  This will be resolved in pre-processing. 
 
 
-Check if hastags are in the text
+We'll now check if hastags are in the text
 
 ```{python}
 
@@ -230,32 +163,22 @@ else:
 
 ```
 
-No hashtags detetected. 
-
-Check if there are emojis in text
-
-```{python}
 
 
-def demojize_text(text: str) -> str:
-    # Convert emojis to "smiling_face_with_heart_eyes" style tokens
-    return emoji.demojize(text, delimiters=(" ", " "))
+# Pre-processing
+
+<br>
+
+Our next step is to prepare the text for tokenization.  We'kk build functions to accomplish the pre-processing steps. 
+
+<br>
 
 
-```
-
-```{python}
 
 
-print(f"Text has an emoji: {has_emoji(text_nona)}")
 
-
-```
-
-Since emojis have been detected we'll need a function to change emojis. 
-
-
-This function will convert emojis to their word meanings, i.e. converting an emoji  to "smiling_face_with_heart_eyes" style tokens
+Since emojis were detected, we will need a function to handle this.  We do not wish to remove the emojis, instead we want to  retain the emotion that emojis carry.  Our function will accomplish this  by converting  emojis to their word meanings, i.e. converting an emoji  to "smiling_face_with_heart_eyes" style tokens
+<br>
 
 ```{python}
 
@@ -268,16 +191,11 @@ def demojize_text(text: str) -> str:
 ```
 
 
-
-```{python}
-
+<br>
 
 
-
-
-```
-
-Function for expanding contractions , i.e. "can't" to "can not"
+Next,we  will build a function function for expanding contractions , i.e. "can't" will be converted to  "can not"
+<br>
 
 ```{python}
 
@@ -289,37 +207,45 @@ def expand_contractions(text: str) -> str:
 
 ```
 
+<br>
 
-Function for reducing 3+ repeated characters to 2 for vowels and consonants
+
+We will use a function for reducing 3+ repeated characters to 2 for vowels and consonants. An example is “soooo” which will be converted to  “soo” (or “so”).
+
+<br>
 ```{python}
 
 def normalize_elongations(text: str) -> str:
-    # Reduce 3+ repeated chars to 2 for vowels/consonants: coooool -> coool
+   
     return re.sub(r'(.)\1{2,}', r'\1\1', text)
 
 
 ```
 
+<br>
 
-function for limiting "!!!!!" tomat most "!!!" and "?????" to at most "???"
+
+Next, we'll handle punctuation.  There are punctuations like exclamation point (!) or question marks(?) that we do not removed as they convey emotion though we do wish to limit the lengh them. AS an example,  "!!!!!" will be limmited to at most "!!!" and "?????" limited to at most "???"
+<br>
 
 ```{python}
 def cap_punct_runs(text: str) -> str:
-    # Limit "!!!!!" to at most "!!!" and "????" to "???"
     text = re.sub(r'!{3,}', '!!!', text)
     text = re.sub(r'\?{3,}', '???', text)
     return text
 
 ```
 
+<br>
 
-Function converts small integers to words. 
 
+To help with our emotion extraction, we wish to transform small numbers to their word meanings.  We will limit our range from  -3 to 20. 
+<br>
 ```{python}
 
 
 def number_to_words_if_helpful(token: str, enable=True):
-    # Convert small integers to words (helps lexicons)
+    
     if not enable:
         return token
     if token.isdigit():
@@ -342,8 +268,9 @@ def number_to_words_if_helpful(token: str, enable=True):
 
 ```
 
-
-Maps POS tags to wordnet POS for lemmatiztion
+<br>
+This next function maps POS tags to wordnet POS for lemmatiztion
+<br>
 
 ```{python}
 
@@ -365,11 +292,30 @@ def get_wordnet_pos(treebank_tag):
 ```
 
 
-Function that builds emotion-aware stoplist
+<br>
 
 ```{python}
 
-# Build emotion-aware stoplist
+
+
+stop_words=stopwords.words('english')
+print(stop_words[:10])
+
+
+
+```
+
+<br>
+
+Above, is a small sample of stop words. Some words  do not carry carry useful information such as words like "the", "and", or "is". Because they do not add value to Natural Language Processing, we use the stop word list to remove them and keep the mopre important words which are content rich.  An exception are stop words that affect emotion and intensity.  Such words are negators, words or phrases that express negation, meaning something is untrue, not happening, or of zero quantity(no, not never .  Other words are intensfiers, adverbs or adjectives that strengthen the meaning of other words (like very, really, or extremely), and modals,words that express modality, such as possibility, necessity, or ability (like, can, should, or must).  Our function will buildan  emotion-aware stoplist.
+
+
+<br>
+
+
+```{python}
+
+
 def emotion_stopwords():
     sw = set(stopwords.words('english'))
     keep = {"no","not","nor","never","none","nobody","nothing","nowhere",
@@ -379,6 +325,8 @@ def emotion_stopwords():
 
 ```
 
+<br>
+
 
  Simple negation: add _NEG suffix until punctuation boundary
 
@@ -386,7 +334,6 @@ def emotion_stopwords():
 
 
 def negation_scope(tokens):
-    # Simple negation: add _NEG suffix until punctuation boundary
     negators = {"no","not","never","n't"}
     punct_boundary = {".","!","?",";",":"}
     out = []
@@ -408,6 +355,11 @@ def negation_scope(tokens):
 
 ```
 
+<br>
+
+Lemmatization reduces words to their base form, but uses  For example, "organizations" becomes "organization" 
+<br>
+
 ```{python}
 
 
@@ -417,7 +369,10 @@ STOP_EMO = emotion_stopwords()
 
 ```
 
+<br>
 
+Now that we have built our functions we will build a function encorporating all functions in the pre-processing of the text. 
+<br>
 
 
 ```{python}
