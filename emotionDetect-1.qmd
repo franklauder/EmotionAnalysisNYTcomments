@@ -51,6 +51,13 @@ nltk.download('punkt')
 
 ```
 
+```{python}
+
+
+nltk.download('averaged_perceptron_tagger_eng')
+
+```
+
 
 ```{python}
 
@@ -372,6 +379,12 @@ STOP_EMO = emotion_stopwords()
 <br>
 
 Now that we have built our functions we will build a function encorporating all functions in the pre-processing of the text. 
+
+The first part of the function deals with the missing values by replacing them with an empty string. 
+
+Next, the text is transformed to a string format as this is required for tokeniation.  Word tokenization splits sentences into individual words and punctuation
+After transformation to a string, white space is removed. 
+
 <br>
 
 
