@@ -14,8 +14,10 @@ import pandas as pd
 import matplotlib as plt
 import seaborn as sns
 import re
+import string
 
 ```
+
 
 
 
@@ -120,23 +122,7 @@ One missing value is detected.  This will be resolved in data pre-processing.
 
 
 
-
-```{python}
-
-
-#text_nona=text.fillna("")
-
-
-```
-
-
-```{python}
-
-
-#print(text_nona.isna().sum())
-
-
-```
+<br>
 
 Next, we'll Check if the text contains emojis
 
@@ -165,6 +151,45 @@ if re.search(r'#\w+', text_string):
 else:
     print("text does not contain hashtags.")
 
+
+
+
+```
+
+<br>
+
+We will check if there is whitepace in our text
+
+```{python}
+
+
+if " " in text:
+    print("The text contains a space.")
+else:
+    print("The text does not contain a space.")
+
+
+
+```
+
+```{python}
+
+
+if re.search(r'\s', text):
+    print("The text contains whitespace (using regex).")
+else:
+    print("The text does not contain whitespace (using regex).")
+
+
+```
+
+```{python}
+
+
+if any(char in text for char in string.whitespace):
+    print("The text contains various whitespace characters.")
+else:
+    print("The text does not contain any whitespace characters.")
 
 
 
@@ -378,14 +403,111 @@ STOP_EMO = emotion_stopwords()
 
 <br>
 
-Now that we have built our functions we will build a function encorporating all functions in the pre-processing of the text. 
+Now that we have built our functions the pre-processing of the text can begin.
+<br>
 
-The first part of the function deals with the missing values by replacing them with an empty string. 
-
-Next, the text is transformed to a string format as this is required for tokeniation.  Word tokenization splits sentences into individual words and punctuation
-After transformation to a string, white space is removed. 
+First step is to replace missing values with an empty string.
 
 <br>
+
+```{python}
+
+text=text.fillna("")
+
+
+```
+
+```{python}
+
+
+print(text.isna().sum())
+
+
+```
+
+
+<br>
+
+Next, the text is transformed to a string format as this is required for tokeniation.  Word tokenization splits sentences into individual words and punctuation.
+
+<br>
+
+```{python}
+
+type(text)
+
+```
+
+```{python}
+
+
+text = str(text)
+
+
+```
+
+
+```{python}
+
+type(text)
+
+```
+
+<br>
+
+Now that our text has been transformed to a string, whitespace will be removed from the text. 
+
+<br>
+
+
+
+
+```{python}
+
+
+
+text = text.replace(" ", "")
+
+
+```
+
+
+```{python}
+
+
+if " " in text:
+    print("The text contains a space.")
+else:
+    print("The text does not contain a space.")
+
+
+
+```
+
+
+```{python}
+
+
+
+if any(char in text for char in string.whitespace):
+    print("The text contains various whitespace characters.")
+else:
+    print("The text does not contain any whitespace characters.")
+
+
+```
+
+```{python}
+
+
+if re.search(r'\s', text):
+    print("The text contains whitespace.")
+else:
+    print("The text does not contain whitespace.")
+
+
+```
+
 
 
 ```{python}
@@ -395,12 +517,7 @@ After transformation to a string, white space is removed.
 
 def preprocess_for_emotions(text: str,
                             convert_small_ints_to_words: bool = True) -> dict:
-    # 1) sanitize
-    if text is None:
-        text = ""
-    text = str(text)
-    text = text.replace("\r", " ").strip()
-    text = re.sub(r"\s+", " ", text)
+   
 
     # 2) emoji/emoticon → text
     text = demojize_text(text)
