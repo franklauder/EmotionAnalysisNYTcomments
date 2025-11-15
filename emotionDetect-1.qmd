@@ -603,7 +603,7 @@ df['prep'] = preprocess_for_emotions(text)
 
 ```{python}
 
-df['prep'] = nyt_comments1718['commentBody'].fillna("").apply(lambda x: preprocess_for_emotions(x))
+nyt_comments1718['prep'] = nyt_comments1718['commentBody'].fillna("").apply(lambda x: preprocess_for_emotions(x))
 
 
 ```
@@ -614,12 +614,14 @@ df['prep'] = nyt_comments1718['commentBody'].fillna("").apply(lambda x: preproce
 ```{python}
 
 
-#df['tokens'] = df['prep'].apply(lambda d: d['tokens'])
-# df['cleaned'] = df['prep'].apply(lambda d: d['cleaned_text'])
+nyt_comments1718['tokens'] = nyt_comments1718['prep'].apply(lambda d: d['tokens'])
+
 
 
 
 ```
+
+
 
 
 
