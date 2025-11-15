@@ -625,6 +625,13 @@ nyt_comments1718['tokens'] = nyt_comments1718['prep'].apply(lambda d: d['tokens'
 
 
 
+```{python}
+
+
+
+nyt_comments1718['cleaned'] = nyt_comments1718['prep'].apply(lambda d: d['cleaned_text'])
+
+```
 
 
 
