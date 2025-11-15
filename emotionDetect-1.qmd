@@ -671,6 +671,10 @@ import text2emotion as te
 ```
 
 
+<br>
+
+Function will extract the emotion with the highest score for each commment. 
+
 ```{python}
 
 def emotion_detection_text2emotion(x):
@@ -679,6 +683,17 @@ def emotion_detection_text2emotion(x):
     exit()
     Keymax_value = max(zip(all_emotion_value.values(), all_emotion_value.keys()[1]))
     return Keymax_value
+
+
+```
+
+<br>
+Apply function to the cleaned column of our dataset. 
+
+```{python}
+
+
+nyt_comments1718["emotion"] = nyt_comments1718["cleaned"].apply(emotion_detection_text2emotion)
 
 
 ```
