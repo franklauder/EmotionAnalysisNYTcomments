@@ -15,6 +15,7 @@ import matplotlib as plt
 import seaborn as sns
 import re
 import string
+import pickle
 
 ```
 
@@ -633,8 +634,54 @@ nyt_comments1718['cleaned'] = nyt_comments1718['prep'].apply(lambda d: d['cleane
 
 ```
 
+```{python}
 
 
+file_out=open("nyt_comments1718","wb")
+pickle.dump(nyt_comments1718, file_out)
+file_out.close()
+
+
+```
+
+```{python}
+
+
+file_in=open("nyt_comments1718", 'rb')
+nyt_comments1718=pickle.load(file_in)
+
+
+```
+
+
+# Text to Emotion
+
+<br>
+
+
+
+```{python}
+
+
+import text2emotion as te
+
+
+
+
+```
+
+
+```{python}
+
+def emotion_detection_text2emotion(x):
+    all_emotion_value = te.get_emotion(x)
+    print(all_emotion_value)
+    exit()
+    Keymax_value = max(zip(all_emotion_value.values(), all_emotion_value.keys()[1]))
+    return Keymax_value
+
+
+```
 
 
 ```{python}
