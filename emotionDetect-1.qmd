@@ -528,61 +528,7 @@ else:
 
 
 
-```{python}
 
-
-
-
-def preprocess_for_emotions(text: str,
-                            convert_small_ints_to_words: bool = True) -> dict:
-   
-
-    # 2) emoji/emoticon → text
-    text = demojize_text(text)
-
-    # 3) contractions
-    text = expand_contractions(text)
-
-    # 4) lowercase
-    text = text.lower()
-
-    # 5) urls/mentions/hashtags
-    #text = replace_specials(text)
-    #text = tokenize_hashtags(text)
-
-    # 6) elongations & punct runs
-    text = normalize_elongations(text)
-    text = cap_punct_runs(text)
-
-    # 7) tokenize
-    tokens = word_tokenize(text)
-
-    # 7b) (optional) convert small integers to words
-    if convert_small_ints_to_words:
-        tokens = [number_to_words_if_helpful(t, enable=True) for t in tokens]
-
-    # 8) pos tag & lemmatize
-    tagged = pos_tag(tokens)
-    lemmas = [lemmatizer.lemmatize(w, get_wordnet_pos(t)) for w, t in tagged]
-
-    # 9) stopword filtering (emotion-aware)
-    keep_punct = {"!", "?", "...", "!!!", "???"}
-    filtered = [w for w in lemmas if (w in keep_punct) or (w.isalpha() and w not in STOP_EMO) or (w.endswith("_neg"))]
-
-    # 10) negation scope
-    final_tokens = negation_scope(filtered)
-
-    # 11) final cleaned string (if needed)
-    cleaned_text = " ".join(final_tokens)
-
-    return {
-        "tokens": final_tokens,
-        "cleaned_text": cleaned_text
-    }
-
-
-
-```
 
 
 ```{python}
