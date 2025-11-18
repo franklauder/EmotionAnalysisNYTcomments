@@ -679,17 +679,7 @@ nyt_comments17_short=nyt_comments17.head(1000)
 
 Function will extract the emotion with the highest score for each commment. 
 
-```{python}
 
-def emotion_detection_text2emotion(x):
-    all_emotion_value = te.get_emotion(x)
-    print(all_emotion_value)
-    exit()
-    Keymax_value = max(zip(all_emotion_value.values(), all_emotion_value.keys()[1]))
-    return Keymax_value
-
-
-```
 
 
 ```{python}
@@ -706,7 +696,8 @@ def emotion_detection_text2emotion(x):
         return ("Unknown", 0.0)
 
     label = max(scores, key=scores.get)   # argmax by value
-    return (label, scores[label])         # or just return `label` if you prefer
+    #return (label, scores[label])         # or just return `label` if you prefer
+    return (label) 
 
 
 ```
@@ -722,7 +713,15 @@ nyt_comments17["emotion"] = nyt_comments17["cleaned"].apply(emotion_detection_te
 
 ```
 
+```{python}
 
+
+
+nyt_comments17_short["emotion"] = nyt_comments17_short["cleaned"].apply(emotion_detection_text2emotion)
+
+
+
+```
 
 
 ```{python}
@@ -789,19 +788,7 @@ test_sample["text2emotion_label"].value_counts().head(10)
 
 
 
-```{python}
 
-tokens=word_tokenize(text_string)
-
-```
-
-```{python}
-
-
-text=text.astype(str)
-
-
-```
 
 ```{python}
 
@@ -812,41 +799,6 @@ tokens_list=[word_tokenize(text) for text in text_list]
 
 ```
 
-```{python}
-
-
-tokens_sentences=nltk.sent_tokenize(text)
 
 
 
-```
-
-
-
-```{python}
-
-
-
-
-
-```
-
-
-
-```{python}
-
-
-
-
-
-```
-
-
-
-```{python}
-
-
-
-
-
-```
