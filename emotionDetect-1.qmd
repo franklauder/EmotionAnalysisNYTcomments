@@ -28,17 +28,18 @@ import nltk
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk import word_tokenize, pos_tag
-import emoji
+
 import contractions
 from nltk.downloader import download
 import nltk.downloader
 
-
+import emoji
 
 
 
 
 ```
+
 
 ```{python}
 
@@ -65,7 +66,7 @@ nltk.download('averaged_perceptron_tagger_eng')
 ```{python}
 
 
-print(nyt_comments1718.info())
+print(nyt_comments17.info())
 
 ```
 
@@ -74,14 +75,14 @@ print(nyt_comments1718.info())
 ```{python}
 
 
-print(nyt_comments1718.head())
+print(nyt_comments17.head())
 
 
 
 ```
 
 ```{python}
-print(nyt_comments1718.tail())
+print(nyt_comments17.tail())
 
 
 ```
@@ -94,16 +95,8 @@ The commentBody column is the text that emotion sentiment  will be extracted fro
 
 ```{python}
 
-text_string=str(text)
 
-
-```
-
-
-```{python}
-
-
-text=nyt_comments1718["commentBody"]
+text=nyt_comments17["commentBody"]
 
 
 ```
@@ -119,7 +112,7 @@ print(text.isna().sum())
 
 ```
 
-One missing value is detected.  This will be resolved in data pre-processing. 
+No Missing Values
 
 
 
@@ -133,7 +126,7 @@ emoji.emoji_count(text)
 
 ```
 
-Two emojis appear in the text.  This will be resolved in pre-processing. 
+Two emojis appear in the text.  
 
 
 We'll now check if hastags are in the text
@@ -245,7 +238,7 @@ def expand_contractions(text: str) -> str:
 
 We will use a function for reducing 3+ repeated characters to 2 for vowels and consonants. An example is “soooo” which will be converted to  “soo” (or “so”).
 
-<br>
+
 ```{python}
 
 def normalize_elongations(text: str) -> str:
@@ -262,7 +255,7 @@ def normalize_elongations(text: str) -> str:
 
 
 Next, we'll handle punctuation.  There are punctuations like exclamation point (!) or question marks(?) that we do not removed as they convey emotion though we do wish to limit the lengh them. AS an example,  "!!!!!" will be limmited to at most "!!!" and "?????" limited to at most "???"
-<br>
+
 
 ```{python}
 def cap_punct_runs(text: str) -> str:
@@ -276,7 +269,7 @@ def cap_punct_runs(text: str) -> str:
 
 
 To help with our emotion extraction, we wish to transform small numbers to their word meanings.  We will limit our range from  -3 to 20. 
-<br>
+
 ```{python}
 
 
@@ -408,7 +401,7 @@ def negation_scope(tokens):
 
 <br>
 
-Lemmatization reduces words to their base form, but uses  For example, "organizations" becomes "organization" 
+Lemmatization reduces words to their base form.  For example, "organizations" becomes "organization" 
 <br>
 
 ```{python}
@@ -528,7 +521,14 @@ else:
 ```
 
 
+```{python}
 
+# 2) emoji/emoticon → text
+    #text = demojize_text(text)
+
+
+
+```
 
 
 
@@ -545,8 +545,7 @@ def preprocess_for_emotions(text: str,
     text = text.replace("\r", " ").strip()
     text = re.sub(r"\s+", " ", text)
 
-    # 2) emoji/emoticon → text
-    text = demojize_text(text)
+   
 
     # 3) contractions
     text = expand_contractions(text)
@@ -594,17 +593,10 @@ def preprocess_for_emotions(text: str,
 ```
 
 
-```{python}
-
-df['prep'] = preprocess_for_emotions(text)
-
-
-
-```
 
 ```{python}
 
-nyt_comments1718['prep'] = nyt_comments1718['commentBody'].fillna("").apply(lambda x: preprocess_for_emotions(x))
+nyt_comments17['prep'] = nyt_comments17['commentBody'].fillna("").apply(lambda x: preprocess_for_emotions(x))
 
 
 ```
@@ -615,7 +607,7 @@ nyt_comments1718['prep'] = nyt_comments1718['commentBody'].fillna("").apply(lamb
 ```{python}
 
 
-nyt_comments1718['tokens'] = nyt_comments1718['prep'].apply(lambda d: d['tokens'])
+nyt_comments17['tokens'] = nyt_comments17['prep'].apply(lambda d: d['tokens'])
 
 
 
@@ -630,15 +622,15 @@ nyt_comments1718['tokens'] = nyt_comments1718['prep'].apply(lambda d: d['tokens'
 
 
 
-nyt_comments1718['cleaned'] = nyt_comments1718['prep'].apply(lambda d: d['cleaned_text'])
+nyt_comments17['cleaned'] = nyt_comments17['prep'].apply(lambda d: d['cleaned_text'])
 
 ```
 
 ```{python}
 
 
-file_out=open("nyt_comments1718","wb")
-pickle.dump(nyt_comments1718, file_out)
+file_out=open("nyt_comments17","wb")
+pickle.dump(nyt_comments17, file_out)
 file_out.close()
 
 
@@ -647,8 +639,8 @@ file_out.close()
 ```{python}
 
 
-file_in=open("nyt_comments1718", 'rb')
-nyt_comments1718=pickle.load(file_in)
+file_in=open("nyt_comments17", 'rb')
+nyt_comments17=pickle.load(file_in)
 
 
 ```
@@ -671,6 +663,18 @@ import text2emotion as te
 ```
 
 
+```{python}
+
+
+
+
+nyt_comments17_short=nyt_comments17.head(1000)
+
+
+
+```
+
+
 <br>
 
 Function will extract the emotion with the highest score for each commment. 
@@ -687,16 +691,102 @@ def emotion_detection_text2emotion(x):
 
 ```
 
+
+```{python}
+
+
+def emotion_detection_text2emotion(x):
+    # handle missing / non-strings safely
+    if pd.isna(x):
+        return ("Unknown", 0.0)
+    x = str(x)
+
+    scores = te.get_emotion(x)  # dict, e.g. {'Happy': 0.33, 'Sad': 0.0, ...}
+    if not scores:
+        return ("Unknown", 0.0)
+
+    label = max(scores, key=scores.get)   # argmax by value
+    return (label, scores[label])         # or just return `label` if you prefer
+
+
+```
+
 <br>
 Apply function to the cleaned column of our dataset. 
 
 ```{python}
 
 
-nyt_comments1718["emotion"] = nyt_comments1718["cleaned"].apply(emotion_detection_text2emotion)
+nyt_comments17["emotion"] = nyt_comments17["cleaned"].apply(emotion_detection_text2emotion)
 
 
 ```
+
+
+
+
+```{python}
+
+
+
+def emotion_detection_text2emotion(text):
+    if pd.isna(text):
+        return ("Unknown", 0.0)
+
+    text = str(text)
+
+    try:
+        scores = te.get_emotion(text)
+    except RecursionError:
+        # mark problem rows and move on
+        return ("Error_Recursion", 0.0)
+    except Exception as e:
+        # catch anything else unexpected
+        return (f"Error_{type(e).__name__}", 0.0)
+
+    if not scores:
+        return ("Unknown", 0.0)
+
+    label = max(scores, key=scores.get)
+    return (label, scores[label])
+
+
+
+
+```
+
+```{python}
+
+
+test_sample["cleaned"] = nyt_comments1718["cleaned"].head(1000)
+
+
+```
+
+
+```{python}
+
+
+
+test_sample["text2emotion_label"], test_sample["text2emotion_score"] = zip(
+    *test_sample["cleaned"].apply(emotion_detection_text2emotion)
+)
+
+
+
+
+```
+
+```{python}
+
+
+
+test_sample["text2emotion_label"].value_counts().head(10)
+
+
+```
+
+
 
 
 ```{python}
